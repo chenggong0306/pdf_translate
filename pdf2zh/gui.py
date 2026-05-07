@@ -916,7 +916,7 @@ def setup_gui(
         return
 
     # Use localhost only for local access
-    bind_addresses = ["127.0.0.1"]
+    bind_addresses = ["0.0.0.0"]
 
     for addr in bind_addresses:
         try:

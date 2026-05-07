@@ -71,7 +71,7 @@ uv run pdf2zh -i
 使用 `nohup` 后台保持运行：
 
 ```bash
-nohup uv run pdf2zh -i --server-name 0.0.0.0 > pdf2zh.log 2>&1 &
+nohup uv run pdf2zh -i > pdf2zh.log 2>&1 &
 ```
 
 或使用 `systemd` 管理服务，创建 `/etc/systemd/system/pdf2zh.service`：
