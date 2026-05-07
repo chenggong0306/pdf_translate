@@ -394,11 +394,14 @@ def translate_file(
         )
 
         # Find the generated output files
-        # The actual filenames include language code, e.g., {filename}.zh.mono.pdf
+        # fast(v1)   -> {filename}-mono.pdf / {filename}-dual.pdf
+        # precise(v2)-> {filename}.{lang}.mono.pdf / {filename}.{lang}.dual.pdf
+        mono_suffixes = ("-mono.pdf", ".mono.pdf")
+        dual_suffixes = ("-dual.pdf", ".dual.pdf")
         for file in output.iterdir():
-            if file.name.endswith(".mono.pdf") and filename in file.name:
+            if file.name.endswith(mono_suffixes) and filename in file.name:
                 file_mono = file
-            elif file.name.endswith(".dual.pdf") and filename in file.name:
+            elif file.name.endswith(dual_suffixes) and filename in file.name:
                 file_dual = file
 
     except CancelledError:
