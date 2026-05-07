@@ -387,22 +387,35 @@ def translate_file(
             ignore_cache=ignore_cache,
             vfont=vfont,
         )
-        kernel.translate(
+        results = kernel.translate(
             request,
             callback=progress_bar,
             cancellation_event=cancellation_event_map[session_id],
         )
 
-        # Find the generated output files
-        # fast(v1)   -> {filename}-mono.pdf / {filename}-dual.pdf
-        # precise(v2)-> {filename}.{lang}.mono.pdf / {filename}.{lang}.dual.pdf
-        mono_suffixes = ("-mono.pdf", ".mono.pdf")
-        dual_suffixes = ("-dual.pdf", ".dual.pdf")
-        for file in output.iterdir():
-            if file.name.endswith(mono_suffixes) and filename in file.name:
-                file_mono = file
-            elif file.name.endswith(dual_suffixes) and filename in file.name:
-                file_dual = file
+        # 优先使用 kernel 返回值中的精确文件路径，避免扫描目录时拿到上次翻译残留的旧文件
+        # (TranslateResult.mono_pdf / dual_pdf 由 LegacyKernel 和 PreciseKernel 填充)
+        if results and results[0].mono_pdf and results[0].dual_pdf:
+            file_mono = Path(results[0].mono_pdf)
+            file_dual = Path(results[0].dual_pdf)
+        else:
+            # 回退到目录扫描（兼容极端情况）
+            # fast(v1)   -> {filename}-mono.pdf / {filename}-dual.pdf
+            # precise(v2)-> {filename}.{lang}.mono.pdf / {filename}.{lang}.dual.pdf
+            mono_suffixes = ("-mono.pdf", ".mono.pdf")
+            dual_suffixes = ("-dual.pdf", ".dual.pdf")
+            matched_mono = []
+            matched_dual = []
+            for file in output.iterdir():
+                if file.name.endswith(mono_suffixes) and filename in file.name:
+                    matched_mono.append(file)
+                elif file.name.endswith(dual_suffixes) and filename in file.name:
+                    matched_dual.append(file)
+            # 取修改时间最新的文件，避免拿到残留的旧翻译文件
+            if matched_mono:
+                file_mono = max(matched_mono, key=lambda f: f.stat().st_mtime)
+            if matched_dual:
+                file_dual = max(matched_dual, key=lambda f: f.stat().st_mtime)
 
     except CancelledError:
         del cancellation_event_map[session_id]
